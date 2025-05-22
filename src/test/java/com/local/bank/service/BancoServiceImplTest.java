@@ -5,12 +5,26 @@ import com.local.bank.entity.Banco;
 import com.local.bank.repository.BancoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
-import java.time.LocalDate;
-import java.util.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.context.MessageSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class BancoServiceImplTest {
 
@@ -20,12 +34,19 @@ class BancoServiceImplTest {
     @Mock
     private BancoRepository repository;
 
+    @Mock
+    private MessageSource messageSource;
+    private MessageService messageService;
+
     private Banco banco;
     private BancoDTO bancoDTO;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        messageService = new MessageService();
+        ReflectionTestUtils.setField(messageService, "messageSource", messageSource);
+        ReflectionTestUtils.setField(service, "messageService", messageService);
 
         banco = Banco.builder()
                 .id(1L)
@@ -58,6 +79,8 @@ class BancoServiceImplTest {
     @Test
     void crear_falla_por_duplicado() {
         when(repository.findByCodigo("B1")).thenReturn(Optional.of(banco));
+        when(messageSource.getMessage(eq("error.banco.existente"), any(), any()))
+                .thenReturn("Ya existe un banco con el código: {0}");
 
         Exception e = assertThrows(IllegalArgumentException.class, () -> service.crear(bancoDTO));
         assertEquals("Ya existe un banco con el código: B1", e.getMessage());
@@ -86,6 +109,8 @@ class BancoServiceImplTest {
     @Test
     void obtenerPorId_no_existe_id() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
+        when(messageSource.getMessage(eq("error.banco.inexistente"), any(), any()))
+                .thenReturn("No existe un banco el id: {0}");
 
         Exception e = assertThrows(IllegalArgumentException.class, () -> service.obtenerPorId(1L));
         assertEquals("No existe un banco el id: 1", e.getMessage());
@@ -105,9 +130,11 @@ class BancoServiceImplTest {
     @Test
     void actualizar_no_existe_id() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
+        when(messageSource.getMessage(eq("error.banco.inexistente"), any(), any()))
+                .thenReturn("No existe un banco el id: {0}");
 
         Exception e = assertThrows(IllegalArgumentException.class, () -> service.actualizar(1L, bancoDTO));
-        assertEquals("Banco no encontrado", e.getMessage());
+        assertEquals("No existe un banco el id: 1", e.getMessage());
     }
 
     @Test
@@ -122,8 +149,10 @@ class BancoServiceImplTest {
     @Test
     void eliminar_no_existe_id() {
         when(repository.existsById(1L)).thenReturn(false);
+        when(messageSource.getMessage(eq("error.banco.inexistente"), any(), any()))
+                .thenReturn("No existe un banco el id: {0}");
 
         Exception e = assertThrows(IllegalArgumentException.class, () -> service.eliminar(1L));
-        assertEquals("Banco no encontrado con id: 1", e.getMessage());
+        assertEquals("No existe un banco el id: 1", e.getMessage());
     }
 }

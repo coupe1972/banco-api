@@ -15,10 +15,14 @@ public class BancoServiceImpl implements BancoService {
     @Autowired
     private BancoRepository repository;
 
+    @Autowired
+    private MessageService messageService;
+
     @Override
     public Banco crear(BancoDTO dto) {
         if (!repository.findByCodigo(dto.getCodigo()).isEmpty()) {
-            throw new IllegalArgumentException("Ya existe un banco con el código: " + dto.getCodigo());
+            throw new IllegalArgumentException(
+                    messageService.getMessage("error.banco.existente", dto.getCodigo()));
         }
         Banco banco = Banco.builder()
                 .nombre(dto.getNombre())
@@ -37,12 +41,14 @@ public class BancoServiceImpl implements BancoService {
     @Override
     public Banco obtenerPorId(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No existe un banco el id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        messageService.getMessage("error.banco.inexistente", id)));
     }
 
     @Override
     public Banco actualizar(Long id, BancoDTO bancoDTO) {
-        Banco banco = repository.findById(id).orElseThrow(() -> new IllegalArgumentException("Banco no encontrado"));
+        Banco banco = repository.findById(id).orElseThrow(() -> new IllegalArgumentException(
+                messageService.getMessage("error.banco.inexistente", id)));
         banco.setNombre(bancoDTO.getNombre());
         banco.setCodigo(bancoDTO.getCodigo());
         banco.setPais(bancoDTO.getPais());
@@ -53,7 +59,8 @@ public class BancoServiceImpl implements BancoService {
     @Override
     public void eliminar(Long id) {
         if (!repository.existsById(id)) {
-            throw new IllegalArgumentException("Banco no encontrado con id: " + id);
+            throw new IllegalArgumentException(
+                    messageService.getMessage("error.banco.inexistente", id));
         }
         repository.deleteById(id);
     }
