@@ -12,7 +12,7 @@ public class SwaggerConfig {
 
     @Bean
     public Docket api() {
-        return new Docket(DocumentationType.SWAGGER_2) // o SWAGGER_2 si querés
+        return new Docket(DocumentationType.SWAGGER_2)
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.local.bank.controller"))
                 .paths(PathSelectors.any())
